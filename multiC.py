@@ -1,5 +1,8 @@
+from pylatex import Document, Section, Subsection, Tabular
+from pylatex.utils import NoEscape
+
 # Función que convierte un número en una base determinada a decimal
-def from_base(num, base):
+def from_base(num, base='d'):
     if base == 'b':
         return int(num, 2)
     elif base == 'h':
@@ -20,6 +23,7 @@ def to_base(num, base):
 bits = int(input("Ingrese la cantidad de bits de los factores a multiplicar: "))
 a_str = input("Ingrese el primer factor a multiplicar: ")
 b_str = input("Ingrese el segundo factor a multiplicar: ")
+config_file = input("Ingrese el nombre del archivo de configuración: ")
 
 # Obtener los valores de los factores
 # Identificamos la base del número (b, h, d) y lo convertimos a decimal para operar con ellos
@@ -36,15 +40,16 @@ if b_base == 's':
 
 # Realizar la multiplicación
 result = 0
-print(f"{' ' * (bits + 4)}{to_base(a, 'b')} (multiplicando)")
-print(f"x {' ' * (bits - len(to_base(b, 'b'))) + to_base(b, 'b')}")
-print(f"{'-' * (bits + 4)}{'-' * len(to_base(b, 'b'))}")
+mult_table = []
+mult_table.append([" " * (bits + 4) + to_base(a, 'b') + " (multiplicando)"])
+mult_table.append(["x " + " " * (bits - len(to_base(b, 'b'))) + to_base(b, 'b')])
+mult_table.append(["-" * (bits + 4) + "-" * len(to_base(b, 'b'))])
 for i in range(bits):
     if b & 1:
-        print(f"{' ' * i}{to_base(a, 'b')} << {i} (desplazamiento izquierdo)")
-        print(f"{' ' * (i + 4)}{'-' * (bits - i)}")
         shifted_a = a << i
-        print(f"{' ' * (bits - len(to_base(shifted_a, 'b')))}{to_base(shifted_a, 'b')} (sumando)")
+        mult_table.append([to_base(a, 'b') + " << " + str(i) + " (desplazamiento izquierdo)"])
+        mult_table.append([" " * (i + 4) + "-" * (bits - i)])
+        mult_table.append([" " * (bits - len(to_base(shifted_a, 'b'))) + to_base(shifted_a, 'b') + " (sumando)"])
         result += shifted_a
     b >>= 1
 
@@ -53,6 +58,10 @@ if result < 0:
     result = -result
     result = (1 << bits) - result
 
-# Mostrar el resultado de la multiplicación en binario
-print(f"{'-' * (bits + 4)}")
-print(f"{' ' * (bits - len(to_base(result, 'b'))) + to_base(result, 'b')} (resultado en binario)")
+# Crear el documento LaTeX
+doc = Document('beamer')
+
+# Agregar la primera diapositiva con los valores de entrada
+with doc.create(Section('Valores de entrada')):
+    doc.append(NoEscape(r'\begin{itemize}'))
+    doc.append(NoEscape(r'\item Operandos: ' + a_str + ', ' + b_str))

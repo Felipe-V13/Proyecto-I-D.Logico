@@ -1,4 +1,35 @@
 import argparse
+import io
+import subprocess
+class Latex:
+    def __init__(self):
+        self.__text = ""
+        self.__ficheroLatex = io.open("latex.tex", "w")
+
+    def Beammer(self, operacion, resultado):
+        self.__text = "\documentclass{beamer}\n"
+        self.__text += "\\begin{document}\n"
+        self.__text += "\\begin{frame}\n"
+        self.__text += "\\frametitle{Operacion}\n"
+        self.__text += "\\begin{center}\n"
+        self.__text +=  operacion +"\n"
+        self.__text += "\end{center}\n"
+        self.__text += "\end{frame}\n"
+        self.__text += "\\begin{frame}\n"
+        self.__text += "\\frametitle{Resultado}\n"
+        self.__text += "\\begin{center}\n"
+        self.__text += resultado + "\n"
+        self.__text += "\end{center}\n"
+        self.__text += "\end{frame}\n"
+        self.__text += "\end{document}\n"
+
+        self.__ficheroLatex.write(self.__text)
+
+    def CreatePDF(self):
+        subprocess.run("pdflatex latex.tex")
+
+    def __str__(self):
+        return self.__text
 
 # Función que convierte un número en una base determinada a decimal
 def from_base(num, base):

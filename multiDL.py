@@ -2,6 +2,7 @@ import sys
 import argparse
 import io
 import subprocess
+
 class Titlepage:
     def __init__(self):
         self.__title = "\\title{}\n"
@@ -90,23 +91,126 @@ class Latex:
     def __str__(self):
         return self.__text
 
-# Función que convierte un número en una base determinada a decimal
-def from_base(num, base):
-    if base == 'b':
-        return int(num, 2)
-    elif base == 'h':
-        return int(num, 16)
-    else:
-        return int(num)
+class Number:
+    def __init__(self, number):
+        self.__number = number
+        self.__base = self.getbase()
 
-# Función que convierte un número decimal a una base determinada
-def to_base(num, base):
-    if base == 'b':
-        return bin(num)[2:]
-    elif base == 'h':
-        return hex(num)[2:]
-    else:
-        return int(num)
+    def getNumber(self):
+        return self.__number
+    
+    def __getbaseindicator__(self):
+        if self.__base == 2:
+            return 'b'
+        elif self.__base == 16:
+            return 'h'
+        else:
+            return 'd'
+
+    def getbase(self):
+        if self.__number[0] ==  'd':
+            return 10
+        elif self.__number[0] == 'b':
+            return 2
+        elif self.__number[0] == 'h':
+            return 16
+        else:
+            self.__number = 'd' + self.__number
+            return 10
+    
+    def isSignedNumber(self):
+        if self.__number[1] == 's':
+            return True
+        return False
+    
+    def toBase(self, base):
+        self.__base = base
+        sign = ''
+        number_t = ''
+        
+        if self.isSignedNumber():
+            number_t = self.__number[2:]
+            sign = 's'
+        else:
+            number_t = self.__number[1:]
+        
+        if base == 'd':
+            self.__number = self.__base + sign + str(int(number_t, self.getbase()))
+        elif base == 'h':
+            self.__number = self.__base + sign + hex(int(number_t, self.getbase())).replace('0x','')
+        elif base == 'b':
+            self.__number = self.__base + sign + bin(int(number_t, self.getbase())).replace('0b', '')
+        else:
+            print("Not valid base")
+    
+    def __getitem__(self, index):
+        return self.__number[index]
+    
+    def __str__(self):
+        return self.__number
+
+class BinaryCalculator:
+    def __init__(self, multiplicand, multiplier):
+        self.__multiplicand = Number(multiplicand)
+        self.__multiplier = Number(multiplier)
+        self.__operationsteps = ''
+        self.__operation = ''
+        self.__lastoperation = ''
+        self.__setFactorsToBinary__()
+    
+    def __setFactorsToBinary__(self):
+        if self.__multiplicand[0] != 'b':
+            self.__multiplicand.toBase('b')
+        if self.__multiplier[0] != 'b':
+            self.__multiplier.toBase('b')
+    
+    def __setOperation__(self, operand):
+        self.__operation = self.__multiplicand.getNumber() + '\n'
+        self.__operation += operand + self.__multiplier.getNumber() + '\n'
+    
+    def __getRealFactor__(self, factor):
+        realfactor = factor[1:]
+        if factor.isSignedNumber():
+            realfactor = factor[2:]
+        return realfactor
+
+    def __getProcediment__(self, multiplicand, multiplier):
+        subproduc = ''
+        for i in range(len(multiplier) - 1, -1, -1):
+            for j in range(len(multiplicand) - 1, -1, -1):
+                subproduc = self.__bit_to_bit_multiplication__(multiplier[i], multiplicand[j]) + subproduc
+            self.__operationsteps += subproduc + "0"*(len(multiplier) - (i + 1)) + '\n'
+            subproduc = ''
+
+    def __bit_to_bit_multiplication__(self, multiplicand, multiplier):
+        if (multiplicand == multiplier):
+            return multiplier
+        else:
+            return '0'
+    
+    def __setsign__(self, resultado):
+        ismultiplicandsigned = self.__multiplicand.isSignedNumber()
+        ismultipliersigned = self.__multiplier.isSignedNumber()
+        
+        if (ismultiplicandsigned and ismultipliersigned):
+            resultado = 'b' + resultado
+        elif not (ismultiplicandsigned or ismultipliersigned):
+            resultado = 'b' + resultado
+        else:
+            resultado = 'bs' + resultado
+        return resultado
+    
+    def Multiplication(self):
+        self.__setOperation__('x')
+        multiplicand = self.__getRealFactor__(self.__multiplicand)
+        multiplier = self.__getRealFactor__(self.__multiplier)
+
+        self.__getProcediment__(multiplicand, multiplier)
+        self.__lastoperation = bin(int(multiplicand, 2)*int(multiplier, 2)).replace('0b', '')
+        self.__lastoperation = self.__setsign__(self.__lastoperation)
+
+    def __str__(self) -> str:
+        return self.__operation + self.__operationsteps +  self.__lastoperation
 
 if __name__ == '__main__':
     commands_i = sys.argv[1:]
@@ -140,48 +244,8 @@ if __name__ == '__main__':
             a_str = filetext[3]
             b_str = filetext[5]
 
-    # Obtener los valores de los factores
-    # Identificamos la base del número (b, h, d) y lo convertimos a decimal para operar con ellos
-    a_base = a_str[0]
-    a_sign = ''
-    if a_str[0] == '-':
-        a_sign = '-'
-        a_str = a_str[1:]
-    a_num = a_str[1:]
-    a = from_base(a_num, a_base)
-    if a_base == 'b' and a_sign == '-':
-        a = -((1 << (bits - 1)) - a)
+bits = 4
 
-    b_base = b_str[0]
-    b_sign = ''
-    if b_str[0] == '-':
-        b_sign = '-'
-        b_str = b_str[1:]
-    b_num = b_str[1:]
-    b = from_base(b_num, b_base)
-    if b_base == 'b' and b_sign == '-':
-        b = -((1 << (bits - 1)) - b)
-
-    # Realizar la multiplicación
-    result = 0
-    print(f"{' ' * (bits + 4)}{to_base(a, 'b')} (multiplicando)")
-    print(f"x {' ' * (bits - len(to_base(b, 'b'))) + to_base(b, 'b')}")
-
-    for i, bit in enumerate(reversed(to_base(b, 'b'))):
-        if bit == '1':
-            partial = a << i
-            result += partial
-            print(f"{' ' * (bits - len(to_base(partial, 'b'))) + to_base(partial, 'b')} {' ' * (i)}(parcial desplazado {i} bits a la izquierda)")
-        else:
-            print(f"{' ' * (bits)} {' ' * (i)}(parcial desplazado {i} bits a la izquierda)")
-
-    # Comprobar si el resultado es negativo y representarlo en complemento a dos si es el caso
-    if result < 0:
-        result = 2**(bits) + result
-    result_str = to_base(result, 'b')
-    if len(result_str) > bits:
-        print("Error: el resultado no puede ser representado con la cantidad de bits especificada.")
-    else:
-        print(f"{' ' * (bits + 4)}{'-' * (bits + 4)}")
-        print(f"{' ' * (bits - len(result_str))}{result_str} (resultado)")
-
+calculator = BinaryCalculator(a_str, b_str)
+calculator.Multiplication()
+print(calculator)

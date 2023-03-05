@@ -69,7 +69,7 @@ class Latex:
     def __maketitle__(self):
         self.__text += "\\frame{\\titlepage}\n"
 
-    def beamer(self):
+    def createBeamer(self):
         self.__text += "\documentclass{beamer}\n"
         self.__text += self.__titlepage.getTitlePage()
         self.__text += "\\begin{document}\n"
@@ -92,9 +92,34 @@ class Latex:
         return self.__text
 
 class Number:
-    def __init__(self, number):
+    def __init__(self, number, bits):
+        self.__bits = bits
         self.__number = number
         self.__base = self.getbase()
+        self.bitextension()
+
+    def bitextension(self):
+        if self.__base == 2:
+            self.__bitextension__()
+        else:
+            oldbase = self.__getbaseindicator__()
+            self.toBase('b')
+            self.__base = self.getbase()
+            self.__bitextension__()
+            self.toBase(oldbase)
+            self.__base = self.getbase()
+
+    def __bitextension__(self):
+        if len(self.__number[1:]) > self.__bits:
+            print('esto era yo w: ', self.__number)
+            self.__number = self.__getbaseindicator__() + self.__number[len(self.__number) - self.__bits:]
+            print('en esto me converti: ', self.__number)
+        else:
+            neededbits = bits - len(self.__number[1:])
+            if self.isSignedNumber():
+                self.__number = self.__getbaseindicator__() + 's' + '0'*neededbits + self.__number[2:]
+            else:
+                self.__number = self.__getbaseindicator__() + '0'*neededbits + self.__number[1:]
 
     def getNumber(self):
         return self.__number
@@ -150,13 +175,22 @@ class Number:
         return self.__number
 
 class BinaryCalculator:
-    def __init__(self, multiplicand, multiplier):
-        self.__multiplicand = Number(multiplicand)
-        self.__multiplier = Number(multiplier)
+    def __init__(self, multiplicand, multiplier, bits):
+        self.__multiplicand = Number(multiplicand, bits)
+        self.__multiplier = Number(multiplier, bits)
         self.__operationsteps = ''
         self.__operation = ''
-        self.__lastoperation = ''
+        self.__lastoperationresult = ''
         self.__setFactorsToBinary__()
+    
+    def getoperationtext(self):
+        return self.__operation
+
+    def getoperationsteps(self):
+        return self.__operationsteps
+
+    def getlastoperationresult(self):
+        return self.__lastoperationresult
     
     def __setFactorsToBinary__(self):
         if self.__multiplicand[0] != 'b':
@@ -206,11 +240,11 @@ class BinaryCalculator:
         multiplier = self.__getRealFactor__(self.__multiplier)
 
         self.__getProcediment__(multiplicand, multiplier)
-        self.__lastoperation = bin(int(multiplicand, 2)*int(multiplier, 2)).replace('0b', '')
-        self.__lastoperation = self.__setsign__(self.__lastoperation)
+        self.__lastoperationresult = bin(int(multiplicand, 2)*int(multiplier, 2)).replace('0b', '')
+        self.__lastoperationresult = self.__setsign__(self.__lastoperationresult)
 
     def __str__(self) -> str:
-        return self.__operation + self.__operationsteps +  self.__lastoperation
+        return self.__operation + self.__operationsteps +  self.__lastoperationresult
 
 if __name__ == '__main__':
     commands_i = sys.argv[1:]
@@ -244,8 +278,12 @@ if __name__ == '__main__':
             a_str = filetext[3]
             b_str = filetext[5]
 
-bits = 4
-
-calculator = BinaryCalculator(a_str, b_str)
-calculator.Multiplication()
-print(calculator)
+    calculator = BinaryCalculator(a_str, b_str, bits)
+    calculator.Multiplication()
+    latex = Latex()
+    latex.createFrame('Operation', calculator.getoperationtext())
+    latex.createFrame('result', calculator.getoperationsteps() + calculator.getlastoperationresult())
+    latex.setTitlePageContent('Multiplicacion binaria', '', ['Justin Corea', 'persona2', 'persona3'], 'Instituto tecnologico de costa rica', 'xx/marzo/2023')
+    latex.createBeamer()
+    #latex.CreatePDF()
+    print(calculator)

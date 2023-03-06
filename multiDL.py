@@ -111,9 +111,7 @@ class Number:
 
     def __bitextension__(self):
         if len(self.__number[1:]) > self.__bits:
-            print('esto era yo w: ', self.__number)
             self.__number = self.__getbaseindicator__() + self.__number[len(self.__number) - self.__bits:]
-            print('en esto me converti: ', self.__number)
         else:
             neededbits = bits - len(self.__number[1:])
             if self.isSignedNumber():

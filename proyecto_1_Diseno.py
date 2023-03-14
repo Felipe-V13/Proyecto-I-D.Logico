@@ -3,6 +3,9 @@ import argparse
 import io
 import subprocess
 
+#"Es el constructor de la clase Titlepage. Inicializa las variables de instancia 
+#de la clase, las cuales contienen las cadenas LaTeX para los diferentes elementos
+#de la página de título (__title, __subtitle, __authors, __institute y __date"
 class Titlepage:
     def __init__(self):
         self.__title = "\\title{}\n"
@@ -12,14 +15,22 @@ class Titlepage:
         self.__date = "\date{}\n"
 
         self.__text = ""
-    
+    #title: Título de la página de título (cadena).
+    #subtitle: Subtítulo de la página de título (cadena).
+    #authors: Autores de la página de título (cadena).
+    #institute: Institución de la página de título (cadena).
+    #date: Fecha de la página de título (cadena).
     def setPageTitleInfo(self, title = "", subtitle = "", authors = "", institute = "", date = ""):
         self.__title = self.__title.replace("{}", "{"+title+"}")
         self.__subtitle = self.__subtitle.replace("{}", "{"+subtitle+"}")
         self.__institute = self.__institute.replace("{}", "{"+institute+"}")
         self.__authors = self.__authors.replace("{}", "{"+authors+"}")
         self.__date = self.__date.replace("{}", "{"+date+"}")
-    
+        
+    #Esta función se utiliza para obtener la página de título completa. 
+    # #Concatena las diferentes cadenas que componen la página de título 
+    # #(__title, __subtitle, __authors, __institute y __date) y las devuelve 
+    # #como una sola cadena.
     def getTitlePage(self):
         self.__text += self.__title
         self.__text += self.__subtitle
@@ -29,15 +40,21 @@ class Titlepage:
         return self.__text
 
 class Frame:
+    #Es el constructor de la clase Frame. Inicializa las variables de instancia de la clase
     def __init__(self):
         self.__content = ""
         self.__frameTitle = ""
         self.__text = ""
-
+        
+    #Esta función se utiliza para establecer el contenido del marco y su título.
+    #La función toma dos cadenas de entrada: title y content.
     def setContent(self, title = "", content = ""):
         self.__frameTitle = title
         self.__content = content
-    
+        
+    #Esta función se utiliza para obtener el marco completo. Concatena las 
+    # #diferentes cadenas que componen el marco (__frameTitle y __content) 
+    # #y las devuelve como una sola cadena.
     def getFrame(self):
         self.__text += "\\begin{frame}\n"
         self.__text += "\\frametitle{"+self.__frameTitle+"}\n"
@@ -48,27 +65,39 @@ class Frame:
         return self.__text
 
 class Latex:
+    #inicializa las variables
     def __init__(self):
         self.__text = ""
         self.__ficheroLatex = io.open("latex.tex", "w")
         self.__frames = []
         self.__titlepage = Titlepage()
         self.__framescounter = 0
- 
+        
+    # Esta función se utiliza para crear un marco y agregarlo a la lista de marcos. 
+    # #La función toma dos cadenas de entrada: title y content.
     def createFrame(self, title, content):
         self.__frames.append(Frame())
         self.__frames[self.__framescounter].setContent(title, content)
         self.__framescounter += 1
     
+    #Esta función se utiliza para establecer el contenido de la página de título. 
+    # #La función toma cinco entradas opcionales: title, subtitle, authors, institute
+    # y date.
     def setTitlePageContent(self, title = "", subtitle = "", authors = [], institute = "", date = ""):
         authores = ""
         for autor in authors:
             authores += autor + " \\and "
         self.__titlepage.setPageTitleInfo(title, subtitle, authores, institute, date)
 
+    #titulo
     def __maketitle__(self):
         self.__text += "\\frame{\\titlepage}\n"
 
+    #Esta función se utiliza para crear el documento LaTeX completo. 
+    # La función concatena las diferentes cadenas que componen el documento LaTeX 
+    # (\documentclass{beamer}, el contenido de la página de título, \begin{document},
+    # los marcos, la página de título y \end{document}) y los almacena en la 
+    # variable __text
     def createBeamer(self):
         self.__text += "\documentclass{beamer}\n"
         self.__text += self.__titlepage.getTitlePage()
@@ -79,50 +108,68 @@ class Latex:
         self.__text += "\end{document}\n"
         self.__ficheroLatex.write(self.__text)
 
+
     def CreatePDF(self):
         subprocess.call()
 
+
     def __str__(self):
         return self.__text
+
 
     def CreatePDF(self):
         subprocess.run("pdflatex latex.tex")
 
+
+
     def __str__(self):
         return self.__text
 
-class Number:
-    def __init__(self, number, bits):
-        self.__bits = bits
-        self.__number = number
-        self.__base = self.getbase()
-        self.bitextension()
 
+class Number:
+    #inicializacion de varables
+    # Constructor que inicializa las variables de la clase
+    def __init__(self, number, bits):
+        self.__bits = bits    # Cantidad de bits del número
+        self.__number = number    # Valor del número
+        self.__base = self.getbase()    # Base numérica del número
+        self.bitextension()    # Extensión del número a la cantidad de bits especificada
+        
+    # Función que extiende el número a la cantidad de bits especificada
     def bitextension(self):
+        # Si la base es 2, se llama a la función de extensión de bits
         if self.__base == 2:
             self.__bitextension__()
+        # Si no es base 2, se convierte el número a binario, se extiende y se vuelve a la base original
         else:
-            oldbase = self.__getbaseindicator__()
-            self.toBase('b')
-            self.__base = self.getbase()
-            self.__bitextension__()
-            self.toBase(oldbase)
-            self.__base = self.getbase()
+            oldbase = self.__getbaseindicator__()    # Se guarda la base original del número
+            self.toBase('b')    # Se convierte el número a binario
+            self.__base = self.getbase()    # Se actualiza la base del número a binario
+            self.__bitextension__()    # Se extiende el número a la cantidad de bits especificada
+            self.toBase(oldbase)    # Se convierte el número a la base original
+            self.__base = self.getbase()    # Se actualiza la base del número a la original
 
     def __bitextension__(self):
+    #Comprobamos si la longitud del número es mayor que la cantidad de bits que se definen en la clase.
         if len(self.__number[1:]) > self.__bits:
+            #Si es mayor, entonces se elimina la parte más significativa de los bits para que el número tenga la longitud de bits deseada.
             self.__number = self.__getbaseindicator__() + self.__number[len(self.__number) - self.__bits:]
         else:
+            #En caso contrario, calculamos la cantidad de bits que faltan para alcanzar la longitud deseada.
             neededbits = self.__bits - len(self.__number[1:])
+            #Si el número es un número con signo, entonces añadimos el bit de signo en el número.
             if self.isSignedNumber():
                 self.__number = self.__getbaseindicator__() + 's' + '0'*neededbits + self.__number[2:]
             else:
+                #En caso contrario, añadimos ceros a la izquierda para alcanzar la longitud deseada.
                 self.__number = self.__getbaseindicator__() + '0'*neededbits + self.__number[1:]
 
     def getNumber(self):
+        #Método para obtener el número.
         return self.__number
-    
+        
     def __getbaseindicator__(self):
+        #Método privado para obtener el indicador de la base en la que está representado el número.
         if self.__base == 2:
             return 'b'
         elif self.__base == 16:
@@ -141,22 +188,28 @@ class Number:
             self.__number = 'd' + self.__number
             return 10
     
+        # Función que verifica si el número es de tipo "signed"
     def isSignedNumber(self):
         if self.__number[1] == 's':
             return True
         return False
-    
+
+    # Función para cambiar la base del número
     def toBase(self, base):
+        # Actualizar la base del número
         self.__base = base
+        # Variables para almacenar el signo y número
         sign = ''
         number_t = ''
         
+        # Si el número es de tipo "signed", entonces se remueve la letra 's'
         if self.isSignedNumber():
             number_t = self.__number[2:]
             sign = 's'
         else:
             number_t = self.__number[1:]
         
+        # Convertir el número a la base especificada
         if base == 'd':
             self.__number = self.__base + sign + str(int(number_t, self.getbase()))
         elif base == 'h':
@@ -165,6 +218,7 @@ class Number:
             self.__number = self.__base + sign + bin(int(number_t, self.getbase())).replace('0b', '')
         else:
             print("Not valid base")
+
     
     def __getitem__(self, index):
         return self.__number[index]
@@ -174,11 +228,13 @@ class Number:
 
 class BinaryCalculator:
     def __init__(self, multiplicand, multiplier, bits):
+        # Se inicializan las variables del objeto
         self.__multiplicand = Number(multiplicand, bits)
         self.__multiplier = Number(multiplier, bits)
         self.__operationsteps = ''
         self.__operation = ''
         self.__lastoperationresult = ''
+        # Se convierten los factores a binario
         self.__setFactorsToBinary__()
 
     def getoperationtext(self):
@@ -191,22 +247,27 @@ class BinaryCalculator:
         return self.__lastoperationresult
 
     def __setFactorsToBinary__(self):
+        # Se convierten los factores a binario si no lo están
         if self.__multiplicand[0] != 'b':
             self.__multiplicand.toBase('b')
         if self.__multiplier[0] != 'b':
             self.__multiplier.toBase('b')
 
+
     def __setOperation__(self, operand):
+        #Se establece la operación a realizar en la variable de instancia __operation
         self.__operation = self.__multiplicand.getNumber() + '\n'
         self.__operation += operand + self.__multiplier.getNumber() + '\n'
 
     def __getRealFactor__(self, factor):
+        #Se obtiene el factor real eliminando la posible "s" que indica que es un número con signo
         realfactor = factor[1:]
         if factor.isSignedNumber():
             realfactor = factor[2:]
         return realfactor
 
     def __getProcediment__(self, multiplicand, multiplier):
+        #Se obtiene el procedimiento de la multiplicación de los dos factores
         subproduc = ''
         for i in range(len(multiplier) - 1, -1, -1):
             for j in range(len(multiplicand) - 1, -1, -1):
@@ -215,6 +276,7 @@ class BinaryCalculator:
             subproduc = ''
 
     def __bit_to_bit_multiplication__(self, multiplicand, multiplier):
+        #Realiza la multiplicación de dos bits y devuelve el resultado
         if (multiplicand == multiplier):
             return multiplier
         else:
@@ -224,12 +286,14 @@ class BinaryCalculator:
         ismultiplicandsigned = self.__multiplicand.isSignedNumber()
         ismultipliersigned = self.__multiplier.isSignedNumber()
 
+        # Verificar si ambos números son firmados
         if (ismultiplicandsigned and ismultipliersigned):
-            resultado = 'b' + resultado
+            resultado = 'b' + resultado  # Si ambos números son firmados, el resultado es un número binario firmado
+        # Verificar si ambos números no son firmados
         elif not (ismultiplicandsigned or ismultipliersigned):
-            resultado = 'b' + resultado
+            resultado = 'b' + resultado  # Si ambos números no son firmados, el resultado es un número binario sin signo
         else:
-            resultado = 'bs' + resultado
+            resultado = 'bs' + resultado  # Si solo uno de los números es firmado, el resultado es un número binario con signo
         return resultado
 
     def Multiplication(self):
@@ -237,51 +301,56 @@ class BinaryCalculator:
         multiplicand = self.__getRealFactor__(self.__multiplicand)
         multiplier = self.__getRealFactor__(self.__multiplier)
 
-        self.__getProcediment__(multiplicand, multiplier)
+        self.__getProcediment__(multiplicand, multiplier)  # Obtener el procedimiento de la multiplicación
 
-        result = '0' * (len(self.__multiplicand) + len(self.__multiplier))
+        result = '0' * (len(self.__multiplicand) + len(self.__multiplier))  # Inicializar el resultado en 0 con una longitud igual a la suma de la longitud del multiplicando y multiplicador
         for i, step in enumerate(self.__operationsteps.split('\n')[:-1]):
-            result = self.__binary_addition__(result, step + '0' * i)
+            result = self.__binary_addition__(result, step + '0' * i)  # Realizar la suma binaria de cada paso del procedimiento de la multiplicación
 
-        result = self.__setsign__(result)
+        result = self.__setsign__(result)  # Establecer el signo del resultado
 
-        self.__lastoperationresult = Number(result, self.__multiplicand._Number__bits)
+        self.__lastoperationresult = Number(result, self.__multiplicand._Number__bits)  # Guardar el resultado de la multiplicación como un objeto Number con la misma cantidad de bits que el multiplicando
+
 
     def __binary_addition__(self, x, y):
-        carry = 0
-        result = ''
-        for i in range(max(len(x), len(y))):
+        carry = 0  # Initialize the carry to 0
+        result = ''  # Initialize the result to an empty string
+        for i in range(max(len(x), len(y))):  # Loop through the indices of the longer of x and y
+            # If the current index is less than the length of x, get the ith digit of x; otherwise, set it to 0
             xi = int(x[-(i+1)]) if i < len(x) else 0
+            # If the current index is less than the length of y, get the ith digit of y; otherwise, set it to 0
             yi = int(y[-(i+1)]) if i < len(y) else 0
-            s = xi + yi + carry
-            result = str(s % 2) + result
-            carry = s // 2
-        if carry:
-            result = '1' + result
+            s = xi + yi + carry  # Add the ith digits of x and y, as well as the carry from the previous digit
+            result = str(s % 2) + result  # Prepend the remainder of s divided by 2 to the result
+            carry = s // 2  # Set the carry to the quotient of s divided by 2
+        if carry:  # If there is a carry remaining after adding the last digits
+            result = '1' + result  # Prepend a 1 to the result
         return result
 
     if __name__ == '__main__':
-        commands_i = sys.argv[1:]
-        parser = argparse.ArgumentParser()
+        commands_i = sys.argv[1:]  # obtener los argumentos de línea de comando después del nombre del script
+        parser = argparse.ArgumentParser()  # Crear un objeto analizador de argumentos para el script
 
+        # Verificar si se proporcionaron argumentos de línea de comando
     if len(commands_i) != 0:
-        parser.add_argument('--bits', type=int, help="Numero de bits para representacion numerica", required=False)
-        parser.add_argument('-a', type=str, help="Multiplicando", required=('--bits' in commands_i))
-        parser.add_argument('-b', type=str, help="Operando", required=('--bits' in commands_i))
+            # Agregar argumentos al analizador de argumentos
+            parser.add_argument('--bits', type=int, help="Número de bits para representación numérica", required=False)
+            parser.add_argument('-a', type=str, help="Multiplicando", required=('--bits' in commands_i))
+            parser.add_argument('-b', type=str, help="Operando", required=('--bits' in commands_i))
+            parser.add_argument('-f', type=str, help="Nombre del archivo con factores y extensión de bits para la representación", required=False)
 
-        parser.add_argument('-f', type=str, help="Name file with factors and bits extension for representation",
-                            required=False)
+            # Analizar los argumentos proporcionados en la línea de comando
+            args = parser.parse_args()
 
-        args = parser.parse_args()
+            # Verificar si el valor de bits es válido
+            if args.bits and not (1 <= args.bits <= 8):
+                print('Error: bits debe ser un entero entre 1 y 8')
+                exit()
 
-        if args.bits and not (1 <= args.bits <= 8):
-            print('Error: bits must be an integer between 1 and 8')
-            exit()
-
-        # Verify that a and b are valid binary numbers with the correct number of bits
-        if args.a and args.b and not (args.a.isdigit() and args.b.isdigit() and len(args.a) == len(args.b) == args.bits):
-            print('Error: a and b must be binary numbers with {} bits'.format(args.bits))
-            exit()
+            # Verificar que a y b sean números binarios válidos con el número correcto de bits
+            if args.a and args.b and not (args.a.isdigit() and args.b.isdigit() and len(args.a) == len(args.b) == args.bits):
+                print('Error: a y b deben ser números binarios con {} bits'.format(args.bits))
+                exit()
 
     else:
         print('There aren\'t inputs')
@@ -310,7 +379,7 @@ class BinaryCalculator:
     latex = Latex()
     latex.createFrame('Operation', calculator.getoperationtext())
     latex.createFrame('result', calculator.getoperationsteps() + calculator.getlastoperationresult())
-    latex.setTitlePageContent('Multiplicacion binaria', '', ['Justin Corea', 'persona2', 'persona3'], 'Instituto tecnologico de costa rica', 'xx/marzo/2023')
+    latex.setTitlePageContent('Multiplicacion binaria', '', ['Justin Corea', 'Felipe Vargas', 'persona3'], 'Instituto tecnologico de costa rica', 'xx/marzo/2023')
     latex.createBeamer()
     #latex.CreatePDF()
     print(calculator)

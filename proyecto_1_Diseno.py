@@ -107,24 +107,16 @@ class Latex:
         self.__maketitle__()
         self.__text += "\end{document}\n"
         self.__ficheroLatex.write(self.__text)
-
-
-    def CreatePDF(self):
-        subprocess.call()
-
+        self.__ficheroLatex.close()
 
     def __str__(self):
         return self.__text
 
-
     def CreatePDF(self):
-        subprocess.run("pdflatex latex.tex")
-
-
+        subprocess.call("pdflatex latex.tex")
 
     def __str__(self):
         return self.__text
-
 
 class Number:
     #inicializacion de varables
@@ -219,7 +211,9 @@ class Number:
         else:
             print("Not valid base")
 
-    
+    def __len__(self):
+        return self.__bits
+
     def __getitem__(self, index):
         return self.__number[index]
     
@@ -253,18 +247,17 @@ class BinaryCalculator:
         if self.__multiplier[0] != 'b':
             self.__multiplier.toBase('b')
 
-
     def __setOperation__(self, operand):
         #Se establece la operación a realizar en la variable de instancia __operation
         self.__operation = self.__multiplicand.getNumber() + '\n'
         self.__operation += operand + self.__multiplier.getNumber() + '\n'
 
-    def __getRealFactor__(self, factor):
+    def __getabsolutefactor__(self, factor):
         #Se obtiene el factor real eliminando la posible "s" que indica que es un número con signo
-        realfactor = factor[1:]
+        absolutefactor = factor[1:]
         if factor.isSignedNumber():
-            realfactor = factor[2:]
-        return realfactor
+            absolutefactor = factor[2:]
+        return absolutefactor
 
     def __getProcediment__(self, multiplicand, multiplier):
         #Se obtiene el procedimiento de la multiplicación de los dos factores
@@ -298,64 +291,51 @@ class BinaryCalculator:
 
     def Multiplication(self):
         self.__setOperation__('x')
-        multiplicand = self.__getRealFactor__(self.__multiplicand)
-        multiplier = self.__getRealFactor__(self.__multiplier)
+        multiplicand = self.__getabsolutefactor__(self.__multiplicand)
+        multiplier = self.__getabsolutefactor__(self.__multiplier)
 
         self.__getProcediment__(multiplicand, multiplier)  # Obtener el procedimiento de la multiplicación
-
-        result = '0' * (len(self.__multiplicand) + len(self.__multiplier))  # Inicializar el resultado en 0 con una longitud igual a la suma de la longitud del multiplicando y multiplicador
-        for i, step in enumerate(self.__operationsteps.split('\n')[:-1]):
-            result = self.__binary_addition__(result, step + '0' * i)  # Realizar la suma binaria de cada paso del procedimiento de la multiplicación
-
+        result = self.__binary_addition__()  # Realizar la suma binaria de cada paso del procedimiento de la multiplicación
         result = self.__setsign__(result)  # Establecer el signo del resultado
+        self.__lastoperationresult = result  # Guardar el resultado de la multiplicación como un objeto Number con la misma cantidad de bits que el multiplicando
 
-        self.__lastoperationresult = Number(result, self.__multiplicand._Number__bits)  # Guardar el resultado de la multiplicación como un objeto Number con la misma cantidad de bits que el multiplicando
+    def __binary_addition__(self):
+        result = 0
+        for step in self.__operationsteps.split('\n')[:-1]:
+            result += int(step, 2)
+        result = bin(result)
+        return str(result.replace('0b', ''))
+    
+    def __str__(self):
+        text = ''
+        text += self.getoperationtext() + '\n'
+        text += self.getoperationsteps() + '\n'
+        text += self.getlastoperationresult()
+        return text
 
+if __name__ == '__main__':
+    commands_i = sys.argv[1:]  # obtener los argumentos de línea de comando después del nombre del script
+    parser = argparse.ArgumentParser()  # Crear un objeto analizador de argumentos para el script
 
-    def __binary_addition__(self, x, y):
-        carry = 0  # Initialize the carry to 0
-        result = ''  # Initialize the result to an empty string
-        for i in range(max(len(x), len(y))):  # Loop through the indices of the longer of x and y
-            # If the current index is less than the length of x, get the ith digit of x; otherwise, set it to 0
-            xi = int(x[-(i+1)]) if i < len(x) else 0
-            # If the current index is less than the length of y, get the ith digit of y; otherwise, set it to 0
-            yi = int(y[-(i+1)]) if i < len(y) else 0
-            s = xi + yi + carry  # Add the ith digits of x and y, as well as the carry from the previous digit
-            result = str(s % 2) + result  # Prepend the remainder of s divided by 2 to the result
-            carry = s // 2  # Set the carry to the quotient of s divided by 2
-        if carry:  # If there is a carry remaining after adding the last digits
-            result = '1' + result  # Prepend a 1 to the result
-        return result
-
-    if __name__ == '__main__':
-        commands_i = sys.argv[1:]  # obtener los argumentos de línea de comando después del nombre del script
-        parser = argparse.ArgumentParser()  # Crear un objeto analizador de argumentos para el script
-
-        # Verificar si se proporcionaron argumentos de línea de comando
+    # Verificar si se proporcionaron argumentos de línea de comando
     if len(commands_i) != 0:
-            # Agregar argumentos al analizador de argumentos
-            parser.add_argument('--bits', type=int, help="Número de bits para representación numérica", required=False)
-            parser.add_argument('-a', type=str, help="Multiplicando", required=('--bits' in commands_i))
-            parser.add_argument('-b', type=str, help="Operando", required=('--bits' in commands_i))
-            parser.add_argument('-f', type=str, help="Nombre del archivo con factores y extensión de bits para la representación", required=False)
+        # Agregar argumentos al analizador de argumentos
+        parser.add_argument('--bits', type=int, help="Número de bits para representación numérica", required=False)
+        parser.add_argument('-a', type=str, help="Multiplicando", required=('--bits' in commands_i))
+        parser.add_argument('-b', type=str, help="Operando", required=('--bits' in commands_i))
+        parser.add_argument('-f', type=str, help="Nombre del archivo con factores y extensión de bits para la representación", required=False)
 
-            # Analizar los argumentos proporcionados en la línea de comando
-            args = parser.parse_args()
+        # Analizar los argumentos proporcionados en la línea de comando
+        args = parser.parse_args()
 
-            # Verificar si el valor de bits es válido
-            if args.bits and not (1 <= args.bits <= 8):
-                print('Error: bits debe ser un entero entre 1 y 8')
-                exit()
-
-            # Verificar que a y b sean números binarios válidos con el número correcto de bits
-            if args.a and args.b and not (args.a.isdigit() and args.b.isdigit() and len(args.a) == len(args.b) == args.bits):
-                print('Error: a y b deben ser números binarios con {} bits'.format(args.bits))
-                exit()
+        # Verificar si el valor de bits es válido
+        if args.bits and not (1 <= args.bits <= 8):
+            print('Error: bits debe ser un entero entre 1 y 8')
+            exit()
 
     else:
         print('There aren\'t inputs')
         sys.exit(-1)
-
 
     args = parser.parse_args()
     bits = ""
@@ -377,9 +357,9 @@ class BinaryCalculator:
     calculator = BinaryCalculator(a_str, b_str, bits)
     calculator.Multiplication()
     latex = Latex()
-    latex.createFrame('Operation', calculator.getoperationtext())
-    latex.createFrame('result', calculator.getoperationsteps() + calculator.getlastoperationresult())
-    latex.setTitlePageContent('Multiplicacion binaria', '', ['Justin Corea', 'Felipe Vargas', 'persona3'], 'Instituto tecnologico de costa rica', 'xx/marzo/2023')
+    latex.createFrame('Operation', calculator.getoperationtext().replace('\n', '\\\\'))
+    latex.createFrame('Result', calculator.getoperationsteps().replace('\n', '\\\\') + calculator.getlastoperationresult())
+    latex.setTitlePageContent('Multiplicacion binaria', 'EL3307:Dise\~no l\\\'ogico', ['Justin Corea', 'Felipe Vargas', 'persona3'], 'Instituto tecnol\\\'ogico de Costa Rica', '16/marzo/2023')
     latex.createBeamer()
-    #latex.CreatePDF()
+    latex.CreatePDF()
     print(calculator)

@@ -359,7 +359,7 @@ if __name__ == '__main__':
     latex = Latex()
     latex.createFrame('Operation', calculator.getoperationtext().replace('\n', '\\\\'))
     latex.createFrame('Result', calculator.getoperationsteps().replace('\n', '\\\\') + calculator.getlastoperationresult())
-    latex.setTitlePageContent('Multiplicacion binaria', 'EL3307:Dise\~no l\\\'ogico', ['Justin Corea', 'Felipe Vargas', 'persona3'], 'Instituto tecnol\\\'ogico de Costa Rica', '16/marzo/2023')
+    latex.setTitlePageContent('Multiplicacion binaria', 'EL3307:Dise\~no l\\\'ogico', ['Justin Corea', 'Felipe Vargas', 'Jesus Alfaro'], 'Instituto tecnol\\\'ogico de Costa Rica', '16/marzo/2023')
     latex.createBeamer()
     latex.CreatePDF()
     print(calculator)
